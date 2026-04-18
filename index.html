@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport"
+        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+    <meta name="theme-color" content="#1cb0f6" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="まなびゲーム" />
+    <title>まなびゲーム 🦉</title>
+    <meta name="description" content="算数・国語をたのしく学べる小学生向け学習ゲームです。" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@400;700;800;900&family=Nunito:wght@700;800;900&display=swap"
+        rel="stylesheet" />
+    <link rel="manifest" href="manifest.json" />
+    <link rel="apple-touch-icon" href="icon-192.png" />
+    <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png" />
+    <link rel="icon" type="image/png" sizes="512x512" href="icon-512.png" />
+    <link rel="stylesheet" href="style.css" />
+</head>
+
+<body>
+
+    <!-- BGM トグルボタン -->
+    <button id="bgm-toggle" class="bgm-btn" onclick="BGM.toggle()" title="BGMをオンにする">🔇</button>
+    <!-- 全画面ボタン -->
+    <button id="fullscreen-toggle" class="bgm-btn fullscreen-btn" onclick="toggleFullScreen()" title="全画面にする">🔲</button>
+
+    <!-- ===== SCREEN: タイトル ===== -->
+    <div id="screen-title" class="screen active">
+        <div class="title-bg">
+            <div class="star star1">⭐</div>
+            <div class="star star2">🌟</div>
+            <div class="star star3">✨</div>
+            <div class="star star4">⭐</div>
+            <div class="star star5">🌟</div>
+        </div>
+
+        <!-- Duolingo 風トップバー（タイトル画面） -->
+        <div class="duo-topbar-title">
+            <div id="duo-title-stats" class="duo-title-stats"></div>
+        </div>
+
+        <div class="title-content">
+            <div class="title-mascot" id="title-mascot">🦉</div>
+            <h1 class="title-text">まなびゲーム<br /><span class="title-highlight" id="title-highlight">かしこくなろう！</span></h1>
+            <p class="title-sub">たのしくまなんで、どんどん成長しよう！</p>
+
+            <!-- STEP 1: 教科選択 -->
+            <div class="subject-select" id="subject-select">
+                <h2 class="mode-label">📖 きょうかをえらんでね</h2>
+                <div class="subject-cards">
+                    <button class="subject-card subject-math" id="btn-subject-math" onclick="selectSubject('math')">
+                        <div class="subject-icon">🧮</div>
+                        <div class="subject-name">算数</div>
+                        <div class="subject-desc">計算・たしざん・かけざん</div>
+                    </button>
+                    <button class="subject-card subject-lang" id="btn-subject-lang" onclick="selectSubject('lang')">
+                        <div class="subject-icon">📚</div>
+                        <div class="subject-name">国語</div>
+                        <div class="subject-desc">漢字・読み方・言葉の意味</div>
+                    </button>
+                    <button class="subject-card subject-typing" id="btn-subject-typing" onclick="selectSubject('typing')">
+                        <div class="subject-icon">⌨️</div>
+                        <div class="subject-name">タイピング</div>
+                        <div class="subject-desc">ローマ字でことばを打とう</div>
+                    </button>
+                    <button class="subject-card subject-prog" id="btn-subject-prog" onclick="selectSubject('prog')">
+                        <div class="subject-icon">💻</div>
+                        <div class="subject-name">プログラミング</div>
+                        <div class="subject-desc">Scratchであそぼう</div>
+                    </button>
+                </div>
+            </div>
+
+            <!-- STEP 2: レベル選択 -->
+            <div class="mode-select" id="mode-select" style="display:none;">
+                <h2 class="mode-label">⚡ むずかしさをえらんでね</h2>
+                <div class="mode-cards" id="mode-cards"></div>
+            </div>
+
+            <!-- STEP 2-B: プログラミング専用エリア -->
+            <div id="prog-start-area" style="display:none; width: 100%; flex-direction: column; align-items: center;">
+                <div id="prog-tutorial-panel" style="display:none; width: 100%; max-width: 800px; margin-bottom: 15px;">
+                    <div class="mission-box"
+                        style="background: rgba(139, 92, 246, 0.2); border: 2px solid var(--clr-purple); border-radius: 12px; padding: 15px; position: relative; overflow: hidden;">
+                        <div style="display:flex; justify-content: space-between; align-items: center;">
+                            <h3 id="mission-title" style="margin:0; color:var(--clr-yellow); font-size:1.2rem;">ミッション</h3>
+                            <button onclick="nextMission()" class="next-mission-btn"
+                                style="background: var(--clr-purple); color:white; border:none; padding: 5px 15px; border-radius: 20px; cursor:pointer;">つぎへ 👉</button>
+                        </div>
+                        <div style="display:flex; align-items: center; gap: 10px; margin-top: 10px;">
+                            <div id="finger-cursor" class="finger-cursor">👆</div>
+                            <p id="mission-text" style="margin:0; color:#fff; font-size:1.1rem; line-height: 1.4;">ミッションをえらんでね！</p>
+                        </div>
+                    </div>
+                </div>
+                <div id="scratch-container" style="display:none; width: 100%; flex-direction: column; align-items: center;">
+                    <div style="display:flex; justify-content:center; align-items:center; gap: 15px; margin-bottom:12px;">
+                        <p style="color:#fff; font-size:1.1rem; margin:0;">Scratchでプログラミングにちょうせん！</p>
+                        <button class="btn-scratch-fs" onclick="fullscreenScratch()"
+                            style="background: var(--clr-purple); color: white; border: 2px solid rgba(255,255,255,0.4); padding: 6px 14px; border-radius: 8px; cursor: pointer; font-weight: bold; font-family: var(--font-jp);">🔲 全画面</button>
+                    </div>
+                    <iframe id="scratch-iframe" allowtransparency="true" width="800" height="480" frameborder="0"
+                        scrolling="no" allowfullscreen
+                        style="max-width: 100%; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.6); background: #fff;"></iframe>
+                </div>
+            </div>
+
+            <button class="btn-start" id="btn-start" onclick="startGame()" disabled>
+                レッスンスタート！🚀
+            </button>
+        </div>
+    </div>
+
+    <!-- ===== SCREEN: ゲーム ===== -->
+    <div id="screen-game" class="screen">
+
+        <!-- Duolingo 風ゲームヘッダー -->
+        <div class="duo-game-header">
+            <button class="header-home-btn" onclick="goHome()" title="やめる">✕</button>
+
+            <!-- 進捗バー -->
+            <div class="duo-progress-wrap">
+                <div class="duo-progress-track">
+                    <div class="duo-progress-fill" id="duo-progress-fill"></div>
+                </div>
+                <span class="duo-progress-label" id="duo-progress-label">0 / 10</span>
+            </div>
+
+            <!-- ハート -->
+            <div class="duo-hearts" id="duo-hearts">
+                <span class="duo-heart full">❤️</span>
+                <span class="duo-heart full">❤️</span>
+                <span class="duo-heart full">❤️</span>
+            </div>
+        </div>
+
+        <!-- サブヘッダー（スコア・タイマー・連続） -->
+        <div class="game-sub-header">
+            <div class="stat-box">
+                <div class="stat-label">XP</div>
+                <div class="stat-value" id="score-display">0</div>
+            </div>
+            <div class="stat-box timer-box">
+                <div class="stat-label">のこり</div>
+                <div class="stat-value" id="timer-display">60</div>
+                <div class="timer-bar-wrap">
+                    <div class="timer-bar" id="timer-bar"></div>
+                </div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-label">れんぞく</div>
+                <div class="stat-value" id="streak-display">0</div>
+            </div>
+        </div>
+
+        <div class="subject-badge" id="subject-badge">🧮 算数</div>
+
+        <div class="question-area">
+            <div class="question-number" id="question-number">もんだい 1</div>
+            <div class="question-card" id="question-card">
+                <div class="question-hint" id="question-hint"></div>
+                <div class="question-text" id="question-text">3 + 5 = ?</div>
+            </div>
+            <div class="choices-grid" id="choices-grid"></div>
+
+            <!-- タイピング専用エリア -->
+            <div id="typing-area" style="display:none; width: 100%;">
+                <div class="typing-lane" id="typing-lane">
+                    <div class="sushi-conveyor"></div>
+                    <div id="sushi-plate" class="sushi-plate">
+                        <div id="sushi-icon" class="sushi-icon-img">🍣</div>
+                        <div id="typing-word" class="sushi-text">寿司を打て</div>
+                        <div id="typing-romaji" class="sushi-romaji">
+                            <span class="typed">su</span><span class="current">s</span><span class="untyped">hidauti</span>
+                        </div>
+                    </div>
+                </div>
+                <input type="text" id="typing-input" style="position:fixed; opacity:0; top:-100px;" autocomplete="off" />
+            </div>
+        </div>
+
+        <!-- Duolingo 風フィードバックパネル -->
+        <div id="duo-feedback-panel" class="duo-panel">
+            <div class="duo-panel-content">
+                <div class="duo-panel-left">
+                    <span id="duo-panel-icon" class="duo-panel-icon">✅</span>
+                    <div>
+                        <div id="duo-panel-msg" class="duo-panel-msg">せいかい！</div>
+                        <div id="duo-panel-sub" class="duo-panel-sub">その調子！</div>
+                    </div>
+                </div>
+                <div class="duo-panel-right">
+                    <span id="duo-panel-xp" class="duo-panel-xp">+10 XP</span>
+                    <button id="duo-panel-btn" class="duo-panel-btn correct-btn">つぎへ →</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 古いフィードバック（非表示・互換用） -->
+        <div class="feedback-overlay" id="feedback-overlay" style="display:none;">
+            <div class="feedback-text" id="feedback-text">⭕ せいかい！</div>
+        </div>
+
+        <!-- タイピング準備カウントダウン -->
+        <div id="countdown-overlay" class="countdown-overlay">
+            <div style="display:flex; flex-direction:column; align-items:center; gap: 20px;">
+                <div id="countdown-msg"
+                    style="font-size: clamp(1.2rem, 3vh, 2rem); font-weight:bold; color:var(--clr-yellow); text-shadow: 0 0 10px rgba(0,0,0,0.8); text-align:center;">
+                    キーボードを「半角（はんかく）」にしてね！<br>準備ができたらスペースキーを押してスタート！</div>
+                <div id="countdown-num"
+                    style="font-size: clamp(3rem, 10vh, 5rem); color:#fff; font-weight:900; text-shadow: 0 0 20px rgba(255,255,255,0.5);">
+                    [ SPACE ]</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== SCREEN: 結果（旧：互換用に残す） ===== -->
+    <div id="screen-result" class="screen">
+        <div class="result-content">
+            <div class="result-mascot" id="result-mascot">🏆</div>
+            <h2 class="result-title" id="result-title">おわったよ！</h2>
+            <div class="result-score-wrap">
+                <div class="result-score-label">XP ゲット</div>
+                <div class="result-score" id="result-score">0</div>
+            </div>
+            <div class="result-stats">
+                <div class="result-stat">
+                    <span class="result-stat-icon">✅</span>
+                    <span class="result-stat-label">せいかい</span>
+                    <span class="result-stat-value" id="result-correct">0</span>
+                </div>
+                <div class="result-stat">
+                    <span class="result-stat-icon">❌</span>
+                    <span class="result-stat-label">まちがい</span>
+                    <span class="result-stat-value" id="result-wrong">0</span>
+                </div>
+                <div class="result-stat">
+                    <span class="result-stat-icon">🔥</span>
+                    <span class="result-stat-label">さいこうれんぞく</span>
+                    <span class="result-stat-value" id="result-streak">0</span>
+                </div>
+            </div>
+            <div class="result-message" id="result-message">よくできました！</div>
+            <div class="result-buttons">
+                <button class="btn-retry" onclick="retryGame()">もういちど！🔄</button>
+                <button class="btn-home" onclick="goHome()">トップへ　🏠</button>
+            </div>
+        </div>
+        <canvas id="confetti-canvas"></canvas>
+    </div>
+
+    <!-- ===== Duolingo 風レッスン完了モーダル ===== -->
+    <div id="duo-complete-modal" class="duo-complete-modal">
+        <div class="duo-complete-card">
+            <!-- マスコット -->
+            <div class="duo-complete-mascot">🦉</div>
+            <div id="duo-complete-msg" class="duo-complete-msg">よくがんばった！</div>
+
+            <!-- レベルアップ（条件付き表示） -->
+            <div id="duo-complete-levelup" class="duo-levelup-banner" style="display:none;">
+                <span class="duo-levelup-icon">⬆️</span>
+                <span>レベルアップ！</span>
+                <span id="duo-complete-level" class="duo-levelup-num">Lv.2</span>
+            </div>
+
+            <!-- XP表示 -->
+            <div class="duo-complete-xp-wrap">
+                <div id="duo-complete-xp" class="duo-complete-xp-val">+100 XP</div>
+                <div class="duo-complete-xp-label">XPゲット！</div>
+            </div>
+
+            <!-- 統計グリッド -->
+            <div class="duo-complete-stats">
+                <div class="duo-complete-stat">
+                    <div class="dcs-icon">🎯</div>
+                    <div class="dcs-val" id="duo-complete-accuracy">0%</div>
+                    <div class="dcs-label">せいかいりつ</div>
+                </div>
+                <div class="duo-complete-stat">
+                    <div class="dcs-icon">✅</div>
+                    <div class="dcs-val" id="duo-complete-correct">0</div>
+                    <div class="dcs-label">せいかい</div>
+                </div>
+                <div class="duo-complete-stat">
+                    <div class="dcs-icon">❤️</div>
+                    <div class="dcs-val" id="duo-complete-wrong">0</div>
+                    <div class="dcs-label">ミス</div>
+                </div>
+                <div class="duo-complete-stat">
+                    <div class="dcs-icon">🔥</div>
+                    <div class="dcs-val" id="duo-complete-streak">0日</div>
+                    <div class="dcs-label">デイリー</div>
+                </div>
+            </div>
+
+            <!-- ボタン -->
+            <div class="duo-complete-btns">
+                <button id="duo-complete-retry" class="duo-complete-btn retry">もういちど 🔄</button>
+                <button id="duo-complete-home" class="duo-complete-btn home">ホームへ 🏠</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- BGM -->
+    <audio id="bgm-audio" loop src="bgm.mp3"></audio>
+
+    <script src="bgm.js"></script>
+    <script src="math_data.js"></script>
+    <script src="kanji_data.js"></script>
+    <script src="typing_data.js"></script>
+    <script src="prog_data.js"></script>
+    <script src="duolingo.js"></script>
+    <script src="game.js"></script>
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js')
+                    .then(r => console.log('[SW] 登録完了:', r.scope))
+                    .catch(e => console.warn('[SW] 登録失敗:', e));
+            });
+        }
+    </script>
+</body>
+
+</html>
