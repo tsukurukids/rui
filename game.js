@@ -15,6 +15,22 @@ let wrongCount = 0;
 let streak = 0;
 let maxStreak = 0;
 let answering = false;
+let gameActive = false;
+
+/* ========== Theme Management ========== */
+function initTheme() {
+  const saved = localStorage.getItem('manabi_theme') || 'dark';
+  if (saved === 'light') {
+    document.body.classList.add('light-mode');
+    document.getElementById('theme-toggle').textContent = '☀️';
+  }
+}
+function toggleTheme() {
+  const isLight = document.body.classList.toggle('light-mode');
+  localStorage.setItem('manabi_theme', isLight ? 'light' : 'dark');
+  document.getElementById('theme-toggle').textContent = isLight ? '☀️' : '🌙';
+}
+window.addEventListener('DOMContentLoaded', initTheme);
 
 let langPoolIdx = { beginner: 0, intermediate: 0, advanced: 0 };
 let langPools = { beginner: [], intermediate: [], advanced: [] };
@@ -169,19 +185,18 @@ function selectSubject(subject) {
   });
 
   if (subject === 'prog') {
-    document.getElementById('mode-select').style.display = 'none';
     document.getElementById('btn-start').style.display = 'none';
     document.getElementById('prog-start-area').style.display = 'flex';
-    document.getElementById('prog-tutorial-panel').style.display = 'none';
-    document.getElementById('scratch-container').style.display = 'none';
-    // Scratchを起動（ここで最新バージョンのエディターを読み込む）
-    document.getElementById('scratch-iframe').src = 'https://scratchfoundation.github.io/scratch-gui/';
+    document.getElementById('prog-step-panel').style.display = 'none';
+    document.getElementById('prog-clear-badge').style.display = 'none';
+    // モード選択を表示（コース選択のため）
+    const modeSection = document.getElementById('mode-select');
+    modeSection.style.display = 'block';
+    modeSection.classList.remove('step-enter');
+    void modeSection.offsetWidth;
+    modeSection.classList.add('step-enter');
   } else {
     document.getElementById('prog-start-area').style.display = 'none';
-    // 他の教科を選んだときはScratchを裏側で停止させる
-    const sf = document.getElementById('scratch-iframe');
-    if (sf) sf.src = 'about:blank';
-
     document.getElementById('btn-start').style.display = 'inline-block';
     // Show mode selector with animation
     const modeSection = document.getElementById('mode-select');
@@ -198,37 +213,149 @@ function selectProgCourse(courseKey) {
   currentProgCourse = PROG_COURSES[courseKey];
   currentMissionIdx = 0;
 
-  // UI切りかえ
-  document.getElementById('prog-tutorial-panel').style.display = 'block';
-  document.getElementById('scratch-container').style.display = 'flex';
-  
-  // Scratchの読み込み（ここで開始）
-  const sf = document.getElementById('scratch-iframe');
-  if (sf && sf.src === 'about:blank') {
-    sf.src = 'https://scratchfoundation.github.io/scratch-gui/';
-  }
-
-  updateMissionUI();
-}
-
-function updateMissionUI() {
   const course = currentProgCourse;
-  const mission = course.missions[currentMissionIdx];
-  
-  document.getElementById('mission-title').textContent = `${course.title} (その ${currentMissionIdx + 1})`;
-  document.getElementById('mission-text').textContent = mission.text;
-  
-  // 指のカーソルを動かす（簡易的な位置指定）
-  const finger = document.getElementById('finger-cursor');
-  finger.className = 'finger-cursor ' + (mission.pos || 'left');
+
+  // コースヘッダー更新
+  const emojiMatch = course.title.match(/^(\S+)/);
+  document.getElementById('prog-course-emoji').textContent = emojiMatch ? emojiMatch[1] : '💻';
+  document.getElementById('prog-course-title').textContent = course.title;
+  document.getElementById('prog-course-desc').textContent = course.desc;
+
+  // コースカラー
+  document.getElementById('prog-course-header').style.borderColor = course.color;
+  document.getElementById('prog-course-header').style.background =
+    `linear-gradient(135deg, ${course.color}22, ${course.colorDark}33)`;
+
+  // ステップドット生成
+  const dotsEl = document.getElementById('prog-step-dots');
+  dotsEl.innerHTML = '';
+  course.steps.forEach((_, i) => {
+    const dot = document.createElement('div');
+    dot.className = 'prog-step-dot' + (i === 0 ? ' active' : '');
+    dot.id = 'prog-dot-' + i;
+    dot.onclick = () => jumpProgStep(i);
+    dotsEl.appendChild(dot);
+  });
+
+  // UI表示
+  document.getElementById('prog-step-panel').style.display = 'flex';
+  document.getElementById('prog-clear-badge').style.display = 'none';
+  document.getElementById('prog-mission-card').style.display = 'flex';
+  document.getElementById('prog-nav-btns') && (document.querySelector('.prog-nav-btns').style.display = 'flex');
+
+  updateProgStepUI();
 }
 
-function nextMission() {
-  currentMissionIdx++;
-  if (currentMissionIdx >= currentProgCourse.missions.length) {
-    currentMissionIdx = 0;
+function updateProgStepUI() {
+  const course = currentProgCourse;
+  const step = course.steps[currentMissionIdx];
+  const total = course.steps.length;
+
+  // ステップラベル
+  document.getElementById('prog-step-label').textContent = `ステップ ${currentMissionIdx + 1} / ${total}`;
+  document.getElementById('prog-step-num').textContent = `ステップ ${step.id}`;
+  document.getElementById('prog-step-emoji').textContent = step.emoji;
+  document.getElementById('prog-step-title').textContent = step.title;
+  document.getElementById('prog-mission-text').textContent = step.mission;
+  document.getElementById('prog-hint-text').textContent = step.hint;
+
+  // チップスリスト
+  const tipsList = document.getElementById('prog-tips-list');
+  tipsList.innerHTML = '';
+  (step.tips || []).forEach(tip => {
+    const li = document.createElement('li');
+    li.textContent = tip;
+    tipsList.appendChild(li);
+  });
+
+  // ドット更新
+  course.steps.forEach((_, i) => {
+    const dot = document.getElementById('prog-dot-' + i);
+    if (dot) {
+      dot.className = 'prog-step-dot' +
+        (i === currentMissionIdx ? ' active' : '') +
+        (i < currentMissionIdx ? ' done' : '');
+    }
+  });
+
+  // ナビボタン
+  const prevBtn = document.getElementById('prog-prev-btn');
+  const nextBtn = document.getElementById('prog-next-btn');
+  if (prevBtn) prevBtn.disabled = currentMissionIdx === 0;
+  if (nextBtn) {
+    if (currentMissionIdx >= total - 1) {
+      nextBtn.textContent = 'クリア！🏆';
+    } else {
+      nextBtn.textContent = 'つぎへ →';
+    }
   }
-  updateMissionUI();
+
+  // カードアニメーション
+  const card = document.getElementById('prog-mission-card');
+  card.classList.remove('prog-card-anim');
+  void card.offsetWidth;
+  card.classList.add('prog-card-anim');
+}
+
+function nextProgStep() {
+  const total = currentProgCourse.steps.length;
+  if (currentMissionIdx >= total - 1) {
+    // コースクリア！
+    showProgClear();
+    return;
+  }
+  currentMissionIdx++;
+  updateProgStepUI();
+}
+
+function prevProgStep() {
+  if (currentMissionIdx <= 0) return;
+  currentMissionIdx--;
+  updateProgStepUI();
+}
+
+function jumpProgStep(idx) {
+  currentMissionIdx = idx;
+  updateProgStepUI();
+}
+
+function showProgClear() {
+  const course = currentProgCourse;
+  const lastStep = course.steps[course.steps.length - 1];
+  document.getElementById('prog-clear-msg').textContent = lastStep.check;
+  document.getElementById('prog-mission-card').style.display = 'none';
+  document.querySelector('.prog-nav-btns').style.display = 'none';
+  const badge = document.getElementById('prog-clear-badge');
+  badge.style.display = 'flex';
+  badge.classList.remove('prog-clear-anim');
+  void badge.offsetWidth;
+  badge.classList.add('prog-clear-anim');
+  // 全ドットをdoneに
+  course.steps.forEach((_, i) => {
+    const dot = document.getElementById('prog-dot-' + i);
+    if (dot) dot.className = 'prog-step-dot done';
+  });
+  try { SFX.correct(5); } catch(e) {}
+}
+
+function resetProgCourse() {
+  currentProgCourse = null;
+  currentMissionIdx = 0;
+  document.getElementById('prog-step-panel').style.display = 'none';
+  document.getElementById('prog-clear-badge').style.display = 'none';
+  document.getElementById('prog-mission-card').style.display = 'flex';
+  document.querySelector('.prog-nav-btns').style.display = 'flex';
+  // モード選択を再表示
+  const modeSection = document.getElementById('mode-select');
+  modeSection.style.display = 'block';
+  document.querySelectorAll('.mode-card').forEach(c => c.classList.remove('selected'));
+  selectedMode = null;
+  document.getElementById('btn-start').style.display = 'none';
+}
+
+/* ========== Scratchを新しいタブで開く ========== */
+function openScratch() {
+  window.open('https://scratch.mit.edu/projects/editor/?tutorial=getStarted', '_blank');
 }
 
 /* ========== Mode selection ========== */
@@ -294,8 +421,16 @@ function startGame() {
   if (tr) tr.innerHTML = '';
 
   // タイピングの表示・非表示を切りかえる
-  document.getElementById('typing-area').style.display = selectedSubject === 'typing' ? 'flex' : 'none';
-  document.getElementById('choices-grid').style.display = selectedSubject === 'typing' ? 'none' : 'grid';
+  const qCard = document.getElementById('question-card');
+  if (selectedSubject === 'typing') {
+    document.getElementById('typing-area').style.display = 'flex';
+    document.getElementById('choices-grid').style.display = 'none';
+    if (qCard) qCard.style.display = 'none';
+  } else {
+    document.getElementById('typing-area').style.display = 'none';
+    document.getElementById('choices-grid').style.display = 'grid';
+    if (qCard) qCard.style.display = 'flex';
+  }
 
   // Update game screen badge
   const meta = SUBJECT_META[selectedSubject];
@@ -310,6 +445,7 @@ function startGame() {
     document.getElementById('screen-game').classList.add('typing-mode');
     waitForSpaceToStart(() => {
       startCountdown(() => {
+        gameActive = true;
         generateQuestion();
         startTimer();
         setTimeout(() => document.getElementById('typing-input').focus(), 100);
@@ -317,6 +453,7 @@ function startGame() {
     });
   } else {
     document.getElementById('screen-game').classList.remove('typing-mode');
+    gameActive = true;
     generateQuestion();
     startTimer();
   }
@@ -376,6 +513,7 @@ function startCountdown(callback) {
 }
 
 function retryGame() {
+  gameActive = false;
   stopTimer();
   showScreen('title');
   setTimeout(() => {
@@ -385,6 +523,7 @@ function retryGame() {
 
 function goHome() {
   if (answering) return;
+  gameActive = false;
   stopTimer();
   
   if (waitingForSpace) {
@@ -579,6 +718,107 @@ function generateLangQuestion() {
   renderChoices(shuffled, q.answer, /* isText */ true);
 }
 
+/* ── タイピング ── */
+function generateTypingQuestion() {
+  let pool = typingPools[selectedMode];
+  let idx = typingPoolIdx[selectedMode];
+
+  if (idx >= pool.length) {
+    let lastQ = pool[pool.length - 1];
+    typingPools[selectedMode] = shuffle([...pool]);
+    if (typingPools[selectedMode][0] === lastQ) typingPools[selectedMode].push(typingPools[selectedMode].shift());
+    idx = 0;
+  }
+  
+  const q = typingPools[selectedMode][idx];
+  typingPoolIdx[selectedMode] = idx + 1;
+
+  document.getElementById('question-hint').textContent = '';
+  document.getElementById('question-text').textContent = '';
+  
+  document.getElementById('typing-word').textContent = q.display;
+  currentTypingAnswer = q.romaji.toLowerCase();
+  typingInputPos = 0;
+  
+  updateTypingRomajiDisplay();
+  
+  const inp = document.getElementById('typing-input');
+  inp.value = '';
+  inp.removeEventListener('keydown', handleTypingInput);
+  inp.addEventListener('keydown', handleTypingInput);
+  
+  // フォーカスを当て直す
+  setTimeout(() => inp.focus(), 10);
+}
+
+function updateTypingRomajiDisplay() {
+  const el = document.getElementById('typing-romaji');
+  const typed = currentTypingAnswer.substring(0, typingInputPos);
+  const current = currentTypingAnswer.substring(typingInputPos, typingInputPos + 1);
+  const untyped = currentTypingAnswer.substring(typingInputPos + 1);
+  
+  el.innerHTML = `<span class="typed">${typed}</span><span class="current">${current}</span><span class="untyped">${untyped}</span>`;
+}
+
+function handleTypingInput(e) {
+  if (answering || !gameActive) return;
+  
+  // 装飾キーなどは無視
+  if (e.ctrlKey || e.altKey || e.metaKey || e.key.length !== 1) return;
+  e.preventDefault(); // デフォルト入力（ブラウザのスクロールなど）を防ぐ
+  
+  const char = e.key.toLowerCase();
+  const targetChar = currentTypingAnswer[typingInputPos];
+  
+  if (char === targetChar) {
+    typingInputPos++;
+    try { SFX.correct(1); } catch(err){}
+    
+    if (typingInputPos >= currentTypingAnswer.length) {
+      answering = true;
+      streak++;
+      if (streak > maxStreak) maxStreak = streak;
+      correctCount++;
+      const pts = selectedMode === 'intermediate' ? 15 : (selectedMode === 'advanced' ? 25 : 10);
+      const bonus = Math.floor(streak / 3);
+      score += pts + bonus * 5;
+      
+      updateTypingRomajiDisplay();
+      updateHUD();
+      
+      // 正解演出
+      const plate = document.getElementById('sushi-plate');
+      plate.style.transform = 'scale(1.15)';
+      plate.style.opacity = '0';
+      
+      setTimeout(() => {
+        plate.style.transition = 'none';
+        plate.style.transform = 'scale(0)';
+        plate.style.opacity = '1';
+        setTimeout(() => {
+          plate.style.transition = 'all 0.3s ease';
+          plate.style.transform = 'scale(1)';
+          answering = false;
+          generateQuestion();
+        }, 50);
+      }, 300);
+    } else {
+      updateTypingRomajiDisplay();
+    }
+  } else {
+    streak = 0;
+    wrongCount++;
+    try { SFX.wrong(); } catch(err){}
+    updateHUD();
+    
+    // エラーアニメーション
+    const plate = document.getElementById('sushi-plate');
+    plate.classList.remove('error-shake');
+    void plate.offsetWidth;
+    plate.classList.add('error-shake');
+  }
+}
+
 /* ========== Choice rendering ========== */
 function renderChoices(choices, correct, isText) {
   const grid = document.getElementById('choices-grid');
@@ -708,6 +948,7 @@ function updateHUD() {
 
 /* ========== End game ========== */
 function endGame() {
+  gameActive = false;
   stopTimer();
   try { SFX.timeUp(); } catch (e) { }
   showScreen('result');

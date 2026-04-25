@@ -24,8 +24,9 @@
 
 <body>
 
-    <!-- (ボタン類を削除) -->
-
+    <!-- 固定ボタン類 -->
+    <button class="bgm-btn" id="bgm-toggle" onclick="BGM.toggle()" title="BGMをオンにする">🔇</button>
+    <button class="theme-btn" id="theme-toggle" onclick="toggleTheme()" title="テーマ切り替え">🌙</button>
     <!-- ===== SCREEN: タイトル ===== -->
     <div id="screen-title" class="screen active">
         <div class="title-bg">
@@ -77,30 +78,71 @@
             </div>
 
             <!-- STEP 2-B: プログラミング専用エリア -->
-            <div id="prog-start-area" style="display:none; width: 100%; flex-direction: column; align-items: center;">
-                <div id="prog-tutorial-panel" style="display:none; width: 100%; max-width: 800px; margin-bottom: 15px;">
-                    <div class="mission-box"
-                        style="background: rgba(139, 92, 246, 0.2); border: 2px solid var(--clr-purple); border-radius: 12px; padding: 15px; position: relative; overflow: hidden;">
-                        <div style="display:flex; justify-content: space-between; align-items: center;">
-                            <h3 id="mission-title" style="margin:0; color:var(--clr-yellow); font-size:1.2rem;">ミッション</h3>
-                            <button onclick="nextMission()" class="next-mission-btn"
-                                style="background: var(--clr-purple); color:white; border:none; padding: 5px 15px; border-radius: 20px; cursor:pointer;">つぎへ 👉</button>
-                        </div>
-                        <div style="display:flex; align-items: center; gap: 10px; margin-top: 10px;">
-                            <div id="finger-cursor" class="finger-cursor">👆</div>
-                            <p id="mission-text" style="margin:0; color:#fff; font-size:1.1rem; line-height: 1.4;">ミッションをえらんでね！</p>
-                        </div>
-                    </div>
+            <div id="prog-start-area" style="display:none; width: 100%; flex-direction: column; align-items: center; gap: 10px;">
+
+                <!-- コース選択前メッセージ -->
+                <div id="prog-course-select" style="width:100%; display:flex; flex-direction:column; align-items:center; gap:8px;">
+                    <p style="color:rgba(255,255,255,0.6); font-size:0.8rem; margin:0;">👆 むずかしさをえらんでね！</p>
                 </div>
-                <div id="scratch-container" style="display:none; width: 100%; flex-direction: column; align-items: center;">
-                    <div style="display:flex; justify-content:center; align-items:center; gap: 15px; margin-bottom:12px;">
-                        <p style="color:#fff; font-size:1.1rem; margin:0;">Scratchでプログラミングにちょうせん！</p>
-                        <button class="btn-scratch-fs" onclick="fullscreenScratch()"
-                            style="background: var(--clr-purple); color: white; border: 2px solid rgba(255,255,255,0.4); padding: 6px 14px; border-radius: 8px; cursor: pointer; font-weight: bold; font-family: var(--font-jp);">🔲 全画面</button>
+
+                <!-- ステップパネル（コース選択後） -->
+                <div id="prog-step-panel" style="display:none; width:100%; flex-direction:column; align-items:center; gap:8px;">
+
+                    <!-- コースヘッダー（小さく） -->
+                    <div id="prog-course-header" class="prog-course-header">
+                        <div class="prog-course-header-left">
+                            <span id="prog-course-emoji" class="prog-course-emoji">🐱</span>
+                            <div>
+                                <div id="prog-course-title" class="prog-course-title">コースタイトル</div>
+                                <div id="prog-course-desc" class="prog-course-desc">説明</div>
+                            </div>
+                        </div>
+                        <button onclick="resetProgCourse()" class="prog-reset-btn">← もどる</button>
                     </div>
-                    <iframe id="scratch-iframe" allowtransparency="true" width="800" height="480" frameborder="0"
-                        scrolling="no" allowfullscreen
-                        style="max-width: 100%; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.6); background: #fff;"></iframe>
+
+                    <!-- ステップ進捗ドット -->
+                    <div class="prog-progress-wrap">
+                        <div class="prog-step-dots" id="prog-step-dots"></div>
+                        <span id="prog-step-label" class="prog-progress-label">ステップ 1 / 5</span>
+                    </div>
+
+                    <!-- ミッションカード -->
+                    <div class="prog-mission-card" id="prog-mission-card">
+                        <div class="prog-mission-header">
+                            <span class="prog-step-emoji" id="prog-step-emoji">👀</span>
+                            <div>
+                                <div class="prog-step-num" id="prog-step-num">ステップ 1</div>
+                                <div class="prog-step-title" id="prog-step-title">ステップタイトル</div>
+                            </div>
+                        </div>
+                        <div class="prog-mission-text" id="prog-mission-text">ミッションがここに出るよ！</div>
+                        <div class="prog-tips-wrap">
+                            <div class="prog-tips-label">💡 やりかた</div>
+                            <ul class="prog-tips-list" id="prog-tips-list"></ul>
+                        </div>
+                        <div class="prog-hint-box">
+                            <span class="prog-hint-icon">🔑</span>
+                            <span id="prog-hint-text">ヒント</span>
+                        </div>
+                    </div>
+
+                    <!-- ナビ＆Scratchボタン -->
+                    <div class="prog-nav-btns">
+                        <button class="prog-nav-btn prog-prev-btn" id="prog-prev-btn" onclick="prevProgStep()">← まえへ</button>
+                        <button class="prog-nav-btn prog-scratch-btn" onclick="openScratch()">🐱 Scratchをひらく</button>
+                        <button class="prog-nav-btn prog-next-btn" id="prog-next-btn" onclick="nextProgStep()">つぎへ →</button>
+                    </div>
+
+                    <!-- クリアバッジ -->
+                    <div id="prog-clear-badge" class="prog-clear-badge" style="display:none;">
+                        <div class="prog-clear-icon">🏆</div>
+                        <div class="prog-clear-title">コースクリア！</div>
+                        <div id="prog-clear-msg" class="prog-clear-msg">よくがんばった！</div>
+                        <div style="display:flex; gap:10px; flex-wrap:wrap; justify-content:center;">
+                            <button class="prog-clear-btn" onclick="openScratch()">🐱 Scratchで作る！</button>
+                            <button class="prog-clear-btn prog-clear-btn-retry" onclick="resetProgCourse()">🔄 もういちど</button>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -179,7 +221,7 @@
         </div>
 
         <!-- Duolingo 風フィードバックパネル -->
-        <div id="duo-feedback-panel" class="duo-panel">
+        <div id="duo-feedback-panel" class="duo-panel" style="display:none;">
             <div class="duo-panel-content">
                 <div class="duo-panel-left">
                     <span id="duo-panel-icon" class="duo-panel-icon">✅</span>
@@ -249,7 +291,7 @@
     </div>
 
     <!-- ===== Duolingo 風レッスン完了モーダル ===== -->
-    <div id="duo-complete-modal" class="duo-complete-modal">
+    <div id="duo-complete-modal" class="duo-complete-modal" style="display:none;">
         <div class="duo-complete-card">
             <!-- マスコット -->
             <div class="duo-complete-mascot">🦉</div>
