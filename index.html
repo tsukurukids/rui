@@ -10,10 +10,11 @@
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="apple-mobile-web-app-title" content="まなびゲーム" />
-    <title>まなびゲーム 🦉</title>
+    <title>まなびゲーム 🐱</title>
     <meta name="description" content="算数・国語をたのしく学べる小学生向け学習ゲームです。" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@400;700;800;900&family=Nunito:wght@700;800;900&display=swap"
+    <link
+        href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@400;700;800;900&family=Nunito:wght@700;800;900&display=swap"
         rel="stylesheet" />
     <link rel="manifest" href="manifest.json" />
     <link rel="apple-touch-icon" href="icon-192.png" />
@@ -40,7 +41,7 @@
         <!-- (左側に出ていた未スタイルのテキストを削除) -->
 
         <div class="title-content">
-            <div class="title-mascot" id="title-mascot">🦉</div>
+            <div class="title-mascot" id="title-mascot">🐱</div>
             <h1 class="title-text">まなびゲーム<br /><span class="title-highlight" id="title-highlight">かしこくなろう！</span></h1>
             <p class="title-sub">たのしくまなんで、どんどん成長しよう！</p>
 
@@ -58,7 +59,8 @@
                         <div class="subject-name">国語</div>
                         <div class="subject-desc">漢字・読み方・言葉の意味</div>
                     </button>
-                    <button class="subject-card subject-typing" id="btn-subject-typing" onclick="selectSubject('typing')">
+                    <button class="subject-card subject-typing" id="btn-subject-typing"
+                        onclick="selectSubject('typing')">
                         <div class="subject-icon">⌨️</div>
                         <div class="subject-name">タイピング</div>
                         <div class="subject-desc">ローマ字でことばを打とう</div>
@@ -78,15 +80,18 @@
             </div>
 
             <!-- STEP 2-B: プログラミング専用エリア -->
-            <div id="prog-start-area" style="display:none; width: 100%; flex-direction: column; align-items: center; gap: 10px;">
+            <div id="prog-start-area"
+                style="display:none; width: 100%; flex-direction: column; align-items: center; gap: 10px;">
 
                 <!-- コース選択前メッセージ -->
-                <div id="prog-course-select" style="width:100%; display:flex; flex-direction:column; align-items:center; gap:8px;">
+                <div id="prog-course-select"
+                    style="width:100%; display:flex; flex-direction:column; align-items:center; gap:8px;">
                     <p style="color:rgba(255,255,255,0.6); font-size:0.8rem; margin:0;">👆 むずかしさをえらんでね！</p>
                 </div>
 
                 <!-- ステップパネル（コース選択後） -->
-                <div id="prog-step-panel" style="display:none; width:100%; flex-direction:column; align-items:center; gap:8px;">
+                <div id="prog-step-panel"
+                    style="display:none; width:100%; flex-direction:column; align-items:center; gap:8px;">
 
                     <!-- コースヘッダー（小さく） -->
                     <div id="prog-course-header" class="prog-course-header">
@@ -128,9 +133,11 @@
 
                     <!-- ナビ＆Scratchボタン -->
                     <div class="prog-nav-btns">
-                        <button class="prog-nav-btn prog-prev-btn" id="prog-prev-btn" onclick="prevProgStep()">← まえへ</button>
+                        <button class="prog-nav-btn prog-prev-btn" id="prog-prev-btn" onclick="prevProgStep()">←
+                            まえへ</button>
                         <button class="prog-nav-btn prog-scratch-btn" onclick="openScratch()">🐱 Scratchをひらく</button>
-                        <button class="prog-nav-btn prog-next-btn" id="prog-next-btn" onclick="nextProgStep()">つぎへ →</button>
+                        <button class="prog-nav-btn prog-next-btn" id="prog-next-btn" onclick="nextProgStep()">つぎへ
+                            →</button>
                     </div>
 
                     <!-- クリアバッジ -->
@@ -140,10 +147,20 @@
                         <div id="prog-clear-msg" class="prog-clear-msg">よくがんばった！</div>
                         <div style="display:flex; gap:10px; flex-wrap:wrap; justify-content:center;">
                             <button class="prog-clear-btn" onclick="openScratch()">🐱 Scratchで作る！</button>
-                            <button class="prog-clear-btn prog-clear-btn-retry" onclick="resetProgCourse()">🔄 もういちど</button>
+                            <button class="prog-clear-btn prog-clear-btn-retry" onclick="resetProgCourse()">🔄
+                                もういちど</button>
                         </div>
                     </div>
                 </div>
+            </div>
+
+            <!-- フリガナのON/OFFスイッチ（タイピングを選んだときだけ表示されるよ） -->
+            <div id="furigana-toggle-wrap" class="furigana-toggle-wrap" style="display:none;">
+                <!-- スイッチをクリックしたらフリガナが切り替わる -->
+                <div id="furigana-toggle-rail" class="toggle-rail on" onclick="toggleFurigana()" title="フリガナをON/OFFする">
+                    <div class="toggle-knob"></div>
+                </div>
+                <span>フリガナ 📖</span>
             </div>
 
             <button class="btn-start" id="btn-start" onclick="startGame()" disabled>
@@ -222,13 +239,17 @@
                     </div>
                     <div id="sushi-plate" class="sushi-plate">
                         <div id="sushi-icon" class="sushi-icon-img">🍣</div>
+                        <!-- フリガナ（ことばの読み方をひらがなで表示するよ） -->
+                        <div id="typing-furigana" class="sushi-furigana"></div>
                         <div id="typing-word" class="sushi-text">寿司を打て</div>
                         <div id="typing-romaji" class="sushi-romaji">
-                            <span class="typed">su</span><span class="current">s</span><span class="untyped">hidauti</span>
+                            <span class="typed">su</span><span class="current">s</span><span
+                                class="untyped">hidauti</span>
                         </div>
                     </div>
                 </div>
-                <input type="text" id="typing-input" style="position:fixed; opacity:0; top:-100px;" autocomplete="off" />
+                <input type="text" id="typing-input" style="position:fixed; opacity:0; top:-100px;"
+                    autocomplete="off" />
             </div>
         </div>
 
@@ -306,7 +327,7 @@
     <div id="duo-complete-modal" class="duo-complete-modal" style="display:none;">
         <div class="duo-complete-card">
             <!-- マスコット -->
-            <div class="duo-complete-mascot">🦉</div>
+            <div class="duo-complete-mascot">🐱</div>
             <div id="duo-complete-msg" class="duo-complete-msg">よくがんばった！</div>
 
             <!-- レベルアップ（条件付き表示） -->
@@ -358,7 +379,6 @@
     <audio id="bgm-audio" loop src="bgm.mp3"></audio>
 
     <script src="bgm.js"></script>
-    <script src="math_data.js"></script>
     <script src="kanji_data.js"></script>
     <script src="typing_data.js"></script>
     <script src="prog_data.js"></script>

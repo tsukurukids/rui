@@ -1373,6 +1373,72 @@ body {
   white-space: nowrap;
 }
 
+/* ── フリガナ（ことばの上にひらがなで読み方を表示） ── */
+.sushi-furigana {
+  color: #555;                     /* 少し薄いグレーで表示 */
+  font-size: clamp(0.65rem, 1.6vw, 0.82rem);
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  font-family: var(--font-jp);
+  white-space: nowrap;
+  line-height: 1.2;
+  /* display:none で隠すので min-height は不要 */
+}
+
+/* ── フリガナON/OFFのトグルスイッチ（スタート前の画面） ── */
+.furigana-toggle-wrap {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: rgba(34, 197, 94, 0.12);   /* タイピングのみどり系 */
+  border: 1.5px solid rgba(34, 197, 94, 0.35);
+  border-radius: 50px;
+  padding: 8px 18px;
+  font-size: clamp(0.78rem, 1.4vh, 0.92rem);
+  font-weight: 800;
+  color: rgba(255, 255, 255, 0.85);
+  cursor: default;
+  animation: stepIn 0.3s ease forwards; /* フワッと表示 */
+}
+
+/* スイッチの外枠（レール） */
+.toggle-rail {
+  position: relative;
+  width: 46px;
+  height: 26px;
+  background: rgba(255, 255, 255, 0.18);
+  border-radius: 99px;
+  border: 2px solid rgba(255, 255, 255, 0.25);
+  transition: background 0.25s ease, border-color 0.25s ease;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+/* ONのときのレール色 */
+.toggle-rail.on {
+  background: var(--clr-green);
+  border-color: var(--clr-green);
+  box-shadow: 0 0 14px rgba(88, 204, 2, 0.5);
+}
+
+/* スイッチの丸いつまみ */
+.toggle-knob {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 18px;
+  height: 18px;
+  background: #fff;
+  border-radius: 50%;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+  transition: left 0.25s ease;
+}
+
+/* ONのときはつまみを右に動かす */
+.toggle-rail.on .toggle-knob {
+  left: 22px;
+}
+
 /* ── ローマ字（打ちかけ表示） ── */
 .sushi-romaji {
   font-size: clamp(0.9rem, 2.2vw, 1.15rem);
@@ -2049,3 +2115,235 @@ body.light-mode .header-home-btn {
   color: #4b5563 !important;
 }
 
+/* ===================================================
+   🌸 和風テーマ（国語専用）
+   body に .wafuu-theme クラスがついたときだけ使われるよ
+   =================================================== */
+
+/* 背景を和風カラーに切り替える */
+body.wafuu-theme {
+  /* 墨色ベースの深い背景 */
+  background:
+    /* 障子（しょうじ）みたいな格子模様 */
+    repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 59px,
+      rgba(180, 120, 80, 0.08) 59px,
+      rgba(180, 120, 80, 0.08) 60px
+    ),
+    repeating-linear-gradient(
+      90deg,
+      transparent,
+      transparent 59px,
+      rgba(180, 120, 80, 0.08) 59px,
+      rgba(180, 120, 80, 0.08) 60px
+    ),
+    /* 和紙のような深いグラデーション */
+    linear-gradient(160deg, #1a0e0a 0%, #2a1410 40%, #1c0f08 70%, #180c08 100%) fixed;
+}
+
+/* 桜の花びら を画面に散らばせる入れ物 */
+.sakura-container {
+  position: fixed;
+  inset: 0;
+  pointer-events: none; /* クリックを邪魔しない */
+  z-index: 0;
+  overflow: hidden;
+}
+
+/* 花びら1枚1枚のスタイル */
+.sakura-petal {
+  position: absolute;
+  top: -40px; /* 画面の上からスタート */
+  font-size: 1.2rem;
+  opacity: 0;
+  animation: sakuraFall linear infinite;
+  user-select: none;
+}
+
+/* 花びらがひらひら落ちるアニメーション */
+@keyframes sakuraFall {
+  0% {
+    opacity: 0;
+    transform: translateY(0) rotate(0deg) translateX(0);
+  }
+  10% {
+    opacity: 0.85;
+  }
+  90% {
+    opacity: 0.6;
+  }
+  100% {
+    /* 画面の下まで落ちて消える */
+    opacity: 0;
+    transform: translateY(110vh) rotate(720deg) translateX(40px);
+  }
+}
+
+/* タイトル画面も和風背景にする */
+body.wafuu-theme #screen-title {
+  /* 遠くに薄い山の影のような雰囲気 */
+  background: radial-gradient(ellipse at 50% 80%, rgba(180,80,60,0.08) 0%, transparent 70%);
+}
+
+/* ゲーム画面の問題カードを和紙風に */
+body.wafuu-theme .question-card {
+  background: rgba(60, 20, 10, 0.55);
+  border-color: rgba(200, 130, 80, 0.4);
+  box-shadow: 0 4px 24px rgba(180, 80, 40, 0.3),
+              inset 0 0 40px rgba(0,0,0,0.2);
+}
+
+/* 選択肢ボタンを和風に */
+body.wafuu-theme .choice-btn {
+  background: rgba(50, 18, 8, 0.6);
+  border-color: rgba(180, 110, 60, 0.35);
+}
+
+body.wafuu-theme .choice-btn:hover {
+  background: rgba(160, 60, 40, 0.4);
+  border-color: rgba(220, 140, 90, 0.8);
+  box-shadow: 0 8px 24px rgba(200, 80, 50, 0.5);
+}
+
+/* スタートボタンを朱色（しゅいろ）に */
+body.wafuu-theme .btn-start {
+  background: linear-gradient(135deg, #c0392b, #e74c3c);
+  box-shadow: 0 6px 24px rgba(192, 57, 43, 0.6);
+}
+
+/* 国語バッジを和風カラーに */
+body.wafuu-theme .badge-lang {
+  background: rgba(192, 57, 43, 0.25);
+  border-color: rgba(231, 76, 60, 0.6);
+  color: #f4a08a;
+}
+
+/* 選択中の国語カードを和風カラーに */
+body.wafuu-theme .subject-lang.selected {
+  border-color: #e74c3c;
+  background: rgba(192, 57, 43, 0.2);
+  box-shadow: 0 0 24px rgba(231, 76, 60, 0.6);
+}
+
+/* 漢字をより大きくかっこよく見せる文字の輝き */
+body.wafuu-theme .question-text.kanji-style {
+  text-shadow: 0 0 28px rgba(255, 140, 80, 0.8),
+               0 0 60px rgba(200, 60, 40, 0.4);
+  color: #fde8d0;
+}
+
+/* 通常の問題文も和風に */
+body.wafuu-theme .question-text {
+  color: #fde8d0;
+  text-shadow: 0 2px 16px rgba(200, 100, 60, 0.5);
+}
+
+/* ===================================================
+   🔵 算数テーマ（算数専用）
+   body に .suugaku-theme クラスがついたときだけ使われるよ
+   =================================================== */
+
+/* 背景を深い青色に切り替える */
+body.suugaku-theme {
+  background:
+    /* 数式みたいなドット模様 */
+    radial-gradient(
+      circle at 1px 1px,
+      rgba(6, 182, 212, 0.08) 1px,
+      transparent 0
+    ) 40px 40px,
+    /* 深い海のグラデーション */
+    linear-gradient(160deg, #050e1a 0%, #071525 40%, #061020 70%, #040c18 100%) fixed;
+  background-size: 40px 40px, 100% 100%;
+}
+
+/* ゲーム画面の問題カードを青く */
+body.suugaku-theme .question-card {
+  background: rgba(5, 20, 50, 0.6);
+  border-color: rgba(28, 176, 246, 0.35);
+  box-shadow: 0 4px 24px rgba(6, 182, 212, 0.25),
+              inset 0 0 40px rgba(0, 0, 0, 0.2);
+}
+
+/* 選択肢ボタンを青系に */
+body.suugaku-theme .choice-btn {
+  background: rgba(5, 15, 40, 0.65);
+  border-color: rgba(28, 176, 246, 0.3);
+}
+
+body.suugaku-theme .choice-btn:hover {
+  background: rgba(6, 100, 160, 0.4);
+  border-color: rgba(28, 176, 246, 0.9);
+  box-shadow: 0 8px 24px rgba(6, 182, 212, 0.55);
+}
+
+/* スタートボタンを青に */
+body.suugaku-theme .btn-start {
+  background: linear-gradient(135deg, #0369a1, #0ea5e9);
+  box-shadow: 0 6px 24px rgba(14, 165, 233, 0.6);
+}
+
+/* 算数バッジを青系に */
+body.suugaku-theme .badge-math {
+  background: rgba(6, 100, 180, 0.3);
+  border-color: rgba(28, 176, 246, 0.7);
+  color: #7dd3fc;
+}
+
+/* 選択中の算数カードを青く */
+body.suugaku-theme .subject-math.selected {
+  border-color: #0ea5e9;
+  background: rgba(14, 165, 233, 0.2);
+  box-shadow: 0 0 24px rgba(14, 165, 233, 0.65);
+}
+
+/* 数式の文字を青白く光らせる */
+body.suugaku-theme .question-text {
+  color: #e0f4ff;
+  text-shadow: 0 2px 20px rgba(28, 176, 246, 0.6);
+}
+
+/* 泡みたいな丸い光のコンテナ */
+.bubble-container {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  overflow: hidden;
+}
+
+/* 泡（あわ）の丸 */
+.math-bubble {
+  position: absolute;
+  bottom: -60px; /* 画面の下からスタート */
+  border-radius: 50%;
+  opacity: 0;
+  background: radial-gradient(
+    circle at 35% 35%,
+    rgba(100, 200, 255, 0.35),
+    rgba(28, 176, 246, 0.08)
+  );
+  border: 1px solid rgba(28, 176, 246, 0.25);
+  animation: bubbleRise linear infinite;
+}
+
+/* 泡がふわっと上に上がるアニメーション */
+@keyframes bubbleRise {
+  0% {
+    opacity: 0;
+    transform: translateY(0) scale(1);
+  }
+  15% {
+    opacity: 0.7;
+  }
+  85% {
+    opacity: 0.4;
+  }
+  100% {
+    /* 画面の上まで上がって消える */
+    opacity: 0;
+    transform: translateY(-115vh) scale(1.1);
+  }
+}

@@ -1,5 +1,5 @@
 // sw.js – Service Worker (まなびゲーム PWA)
-const CACHE = 'manabi-v13';
+const CACHE = 'manabi-v14';
 const ASSETS = [
     './',
     './index.html',
@@ -10,7 +10,6 @@ const ASSETS = [
     './kanji_data.js',
     './typing_data.js',
     './prog_data.js',
-    './math_data.js',
     './bgm.mp3',
     './icon-192.png',
     './icon-512.png',

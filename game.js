@@ -41,6 +41,9 @@ let currentTypingAnswer = '';  // 今の正解ローマ字
 let typingInputPos = 0;       // 今何文字目まで合ってるか
 let typingTimer = null;       // 寿司が流れるタイマー（またはアニメーション監視）
 
+// フリガナをONにするかOFFにするか（最初はON）
+let furiganaEnabled = true;
+
 let countdownInterval = null; // カウントダウン用
 let waitingForSpace = false;
 let spaceCallback = null;
@@ -138,6 +141,33 @@ function fullscreenScratch() {
   }
 }
 
+/* ========== フリガナのON/OFF切り替え ========== */
+function toggleFurigana() {
+  // ONとOFFを入れ替える
+  furiganaEnabled = !furiganaEnabled;
+
+  // スイッチの見た目を変える（ONのときは緑、OFFのときは灰色）
+  const rail = document.getElementById('furigana-toggle-rail');
+  if (rail) {
+    if (furiganaEnabled) {
+      rail.classList.add('on');     // 緑のON状態にする
+    } else {
+      rail.classList.remove('on'); // OFFにする
+    }
+  }
+
+  // すでに表示中のフリガナも即座に切り替える
+  const furiganaEl = document.getElementById('typing-furigana');
+  if (furiganaEl) {
+    // テキストがあるときだけ切り替える（ひらがな単語はテキストが空なのでそのまま）
+    if (furiganaEnabled && furiganaEl.textContent) {
+      furiganaEl.style.display = '';     // 表示する
+    } else {
+      furiganaEl.style.display = 'none'; // 隠す
+    }
+  }
+}
+
 /* ========== Subject selection ========== */
 function selectSubject(subject) {
   selectedSubject = subject;
@@ -183,6 +213,12 @@ function selectSubject(subject) {
     `;
     cards.appendChild(btn);
   });
+
+  // タイピングのときだけフリガナスイッチを見せる
+  const toggleWrap = document.getElementById('furigana-toggle-wrap');
+  if (toggleWrap) {
+    toggleWrap.style.display = (subject === 'typing') ? 'flex' : 'none';
+  }
 
   if (subject === 'prog') {
     document.getElementById('btn-start').style.display = 'none';
@@ -442,6 +478,18 @@ function startGame() {
   badge.textContent = meta.badge;
   badge.className = 'subject-badge ' + meta.badgeClass;
 
+  // 教科ごとに専用テーマを切り替える
+  if (selectedSubject === 'lang') {
+    removesuugakuTheme();  // 算数テーマを先に消す
+    applyWafuuTheme();     // 和風テーマをON
+  } else if (selectedSubject === 'math') {
+    removeWafuuTheme();    // 和風テーマを先に消す
+    applysuugakuTheme();   // 算数テーマ（青）をON
+  } else {
+    removeWafuuTheme();    // どちらでもない場合は両方OFF
+    removesuugakuTheme();
+  }
+
   showScreen('game');
   updateHUD();
 
@@ -564,6 +612,8 @@ function goHome() {
   selectedSubject = null;
   selectedMode = null;
   document.getElementById('screen-game').classList.remove('typing-mode');
+  removeWafuuTheme();    // ホームに戻るとき和風テーマを外す
+  removesuugakuTheme();  // ホームに戻るとき算数テーマも外す
   showScreen('title');
 }
 
@@ -931,6 +981,36 @@ function launchConfetti() {
    全部合ったら次の問題へ進むよ！
    ========================================================== */
 
+/* ── カタカナをひらがなに変換するおたすけ関数 ── */
+// 「バナナ」→「ばなな」のように変換する
+function katakanaToHiragana(str) {
+  return str.replace(/[\u30A1-\u30F6]/g, ch =>
+    String.fromCharCode(ch.charCodeAt(0) - 0x60)
+  );
+}
+
+/* ── フリガナ文字を求める関数 ── */
+// 表示することばを受け取って、フリガナ（ひらがな）を返す
+function getFurigana(q) {
+  // データに furigana フィールドがあればそれを使う
+  if (q.furigana) return q.furigana;
+
+  const display = q.display;
+
+  // ひらがなだけの単語はそれ自体がフリガナなので空にする
+  if (/^[ぁ-んー\s]+$/.test(display)) return '';
+
+  // カタカナだけの単語はひらがなに変換して返す
+  if (/^[ァ-ヶー\s]+$/.test(display)) return katakanaToHiragana(display);
+
+  // 「万（まん）」のような「漢字（よみ）」形式からひらがなを取り出す
+  const parenMatch = display.match(/（([^）]+)）/);
+  if (parenMatch) return parenMatch[1];
+
+  // それ以外（漢字・英数字など）は furigana フィールドがないと表示できないので空
+  return '';
+}
+
 /* ── タイピング問題を表示する ── */
 function generateTypingQuestion() {
   let pool = typingPools[selectedMode];
@@ -953,6 +1033,21 @@ function generateTypingQuestion() {
   document.getElementById('question-hint').textContent = q.hint || '';
   const wordEl = document.getElementById('typing-word');
   wordEl.textContent = q.display;
+
+  // フリガナを計算して表示する
+  const furiganaEl = document.getElementById('typing-furigana');
+  if (furiganaEl) {
+    // フリガナの文字を求める（データにあればそれ、なければ自動で計算する）
+    const fg = getFurigana(q);
+    furiganaEl.textContent = fg;
+
+    // フリガナOFFのとき、またはフリガナがない単語は完全に非表示にする
+    if (furiganaEnabled && fg) {
+      furiganaEl.style.display = '';  // 表示する
+    } else {
+      furiganaEl.style.display = 'none'; // スペースも取らずに隠す
+    }
+  }
   
   // 寿司アイコンをランダムに
   const sushiIcons = ['🍣', '🍢', '🍱', '🍙', '🍛', '🍤', '🍮', '🍶', '🍵'];
@@ -1148,3 +1243,122 @@ function handleTypingMiss() {
   // 次の問題へ
   if (gameActive && selectedSubject === 'typing') generateTypingQuestion();
 }
+
+/* ========================================================
+   🌸 和風テーマ（国語専用）の付け外し
+   ======================================================== */
+
+// 桜の花びらを画面に散らばせる
+function createSakuraPetals() {
+  // すでにある場合は何もしない
+  if (document.getElementById('sakura-container')) return;
+
+  // 花びらを入れる透明な箱を作る
+  const container = document.createElement('div');
+  container.className = 'sakura-container';
+  container.id = 'sakura-container';
+  document.body.appendChild(container);
+
+  // 花びらの絵文字（桜・梅・花）
+  const petals = ['🌸', '🌸', '🌸', '🌺', '🌼'];
+
+  // 15枚の花びらを作る
+  for (let i = 0; i < 15; i++) {
+    const petal = document.createElement('div');
+    petal.className = 'sakura-petal';
+
+    // ランダムな絵文字を選ぶ
+    petal.textContent = petals[Math.floor(Math.random() * petals.length)];
+
+    // 横の位置をランダムに決める（0〜100%の間）
+    petal.style.left = Math.random() * 100 + 'vw';
+
+    // 落ちる速さをランダムに（4秒〜10秒）
+    const duration = 4 + Math.random() * 6;
+    petal.style.animationDuration = duration + 's';
+
+    // バラバラのタイミングで落ち始める（待ち時間をずらす）
+    petal.style.animationDelay = (Math.random() * duration * -1) + 's';
+
+    // 大きさも少しバラバラに
+    petal.style.fontSize = (0.9 + Math.random() * 0.8) + 'rem';
+
+    container.appendChild(petal);
+  }
+}
+
+// 桜の花びらを消す
+function removeSakuraPetals() {
+  const container = document.getElementById('sakura-container');
+  if (container) container.remove();
+}
+
+// 和風テーマを画面全体に適用する
+function applyWafuuTheme() {
+  document.body.classList.add('wafuu-theme');
+  createSakuraPetals(); // 花びらを散らす
+}
+
+// 和風テーマを元に戻す
+function removeWafuuTheme() {
+  document.body.classList.remove('wafuu-theme');
+  removeSakuraPetals(); // 花びらを消す
+}
+
+/* ========================================================
+   🔵 算数テーマ（青）の付け外し
+   ======================================================== */
+
+// 泡（あわ）を画面の下から上にふわふわ浮かせる
+function createBubbles() {
+  // すでにある場合は何もしない
+  if (document.getElementById('bubble-container')) return;
+
+  // 泡を入れる透明な箱を作る
+  const container = document.createElement('div');
+  container.className = 'bubble-container';
+  container.id = 'bubble-container';
+  document.body.appendChild(container);
+
+  // 12個の泡を作る
+  for (let i = 0; i < 12; i++) {
+    const bubble = document.createElement('div');
+    bubble.className = 'math-bubble';
+
+    // 泡の大きさをランダムに（10px〜50px）
+    const size = 10 + Math.random() * 40;
+    bubble.style.width = size + 'px';
+    bubble.style.height = size + 'px';
+
+    // 横の位置をランダムに
+    bubble.style.left = Math.random() * 100 + 'vw';
+
+    // 上に浮かぶ速さをランダムに（5秒〜14秒）
+    const duration = 5 + Math.random() * 9;
+    bubble.style.animationDuration = duration + 's';
+
+    // バラバラのタイミングで動き始める
+    bubble.style.animationDelay = (Math.random() * duration * -1) + 's';
+
+    container.appendChild(bubble);
+  }
+}
+
+// 泡を消す
+function removeBubbles() {
+  const container = document.getElementById('bubble-container');
+  if (container) container.remove();
+}
+
+// 算数テーマを適用する
+function applysuugakuTheme() {
+  document.body.classList.add('suugaku-theme');
+  createBubbles(); // 泡を浮かせる
+}
+
+// 算数テーマを解除する
+function removesuugakuTheme() {
+  document.body.classList.remove('suugaku-theme');
+  removeBubbles(); // 泡を消す
+}
+
