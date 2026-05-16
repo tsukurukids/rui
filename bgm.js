@@ -123,5 +123,21 @@ const SFX = (() => {
             tone(330, t + 0.13, 0.15, 'square', 0.25);
             tone(220, t + 0.26, 0.40, 'sawtooth', 0.22);
         },
+
+        /** タイピング：1文字正解したときの軽い音 */
+        type() {
+            const c = ctx();
+            const t = c.currentTime;
+            // 短くて軽いクリック音
+            tone(880, t, 0.04, 'square', 0.18);
+        },
+
+        /** タイピング：ミスしたときの音 */
+        miss() {
+            const c = ctx();
+            const t = c.currentTime;
+            // 低めのブン音
+            tone(250, t, 0.10, 'sawtooth', 0.20);
+        },
     };
 })();

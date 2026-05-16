@@ -1304,8 +1304,9 @@ body {
   position: absolute;
   /* top: コンベアの高さ(32px)を除いた中央あたり */
   top: 50%;
+  /* アニメーションしていないときは画面右外に隠しておく */
   transform: translateY(-58%);
-  right: -300px;
+  right: -310px;
   width: 280px;
   min-height: 120px;
   display: flex;
@@ -1324,6 +1325,8 @@ body {
   z-index: 10;
   user-select: none;
   padding: 12px 24px 20px;
+  /* アニメーション中以外はすぐ非表示に戻れるようにnoneにしておく */
+  animation: none;
 }
 
 /* お皿の下の影（台座） */
@@ -1340,13 +1343,14 @@ body {
 }
 
 /* ── お皿が流れるアニメーション ── */
+/* sushi-movingクラスがついたときだけ流れる。終わったら右外に戻る */
 .sushi-moving {
   animation: sushiFlow 8s linear forwards;
 }
 
 @keyframes sushiFlow {
-  from { right: -310px; }
-  to   { right: 105%; }
+  0%   { right: -310px; }  /* 右端からスタート */
+  100% { right: 105%; }    /* 左端まで流れて消える */
 }
 
 /* ── 寿司アイコン ── */
@@ -1419,6 +1423,111 @@ body {
   transition: transform 0.25s cubic-bezier(0.18, 0.89, 0.32, 1.28), opacity 0.25s ease;
   transform: translateY(-120%) scale(1.15) rotate(-5deg) !important;
   opacity: 0;
+}
+
+/* ── 食べキャラ（コンベア左端にいるネコ） ── */
+.sushi-eater {
+  position: absolute;
+  left: 8px;              /* コンベアの左はじ */
+  top: 50%;
+  transform: translateY(-62%);
+  z-index: 20;
+  filter: drop-shadow(0 3px 6px rgba(0,0,0,0.4));
+  /* ネコとお箸を横並びにする */
+  display: flex;
+  align-items: center;
+  gap: 0px;
+}
+
+/* ネコ本体 */
+.eater-body {
+  font-size: 2.4rem;
+  display: inline-block;
+}
+
+/* お箸：右に伸ばして「早く来て！」ってするアニメーション */
+.eater-reach {
+  font-size: 1.6rem;
+  display: inline-block;
+  animation: chopReach 1.3s ease-in-out infinite;
+  transform-origin: left center;
+}
+
+/* お箸が右にスッと伸びて、戻る動き */
+@keyframes chopReach {
+  0%,  100% { transform: translateX(0px)  rotate(-25deg) scaleX(0.85); opacity: 0.7; }
+  45%       { transform: translateX(20px) rotate( 10deg) scaleX(1.15); opacity: 1.0; }
+  60%       { transform: translateX(16px) rotate(  5deg) scaleX(1.08); opacity: 1.0; }
+}
+
+/* ── 食べた枚数バッジ（ネコの下に表示） ── */
+.plate-count {
+  position: absolute;
+  left: 4px;
+  bottom: 6px;         /* コンベアの下のはし */
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  background: rgba(0, 0, 0, 0.45);
+  border: 1.5px solid rgba(255,255,255,0.25);
+  border-radius: 10px;
+  padding: 2px 7px 2px 5px;
+  z-index: 25;
+  backdrop-filter: blur(4px);
+}
+
+/* 皿の枚数の数字 */
+#plate-count-num {
+  font-size: 1rem;
+  font-weight: 900;
+  color: #ffd900;      /* 黄色で目立つ */
+  min-width: 1ch;
+  text-align: right;
+}
+
+/* 「まい」の文字 */
+.plate-count-label {
+  font-size: 0.65rem;
+  color: rgba(255,255,255,0.7);
+}
+
+/* 数が増えたときにポップするアニメーション */
+@keyframes countPop {
+  0%   { transform: scale(1); }
+  40%  { transform: scale(1.5); color: #fff; }
+  100% { transform: scale(1); }
+}
+
+.plate-count-pop {
+  animation: countPop 0.3s ease-out forwards;
+}
+
+/* ネコの顔だけ：うれしそうにモグモグする */
+@keyframes bodyNom {
+  0%   { transform: scale(1)    rotate(  0deg); }
+  20%  { transform: scale(1.35) rotate(-14deg); } /* うれしい！  */
+  40%  { transform: scale(1.2)  rotate( 10deg); } /* モグモグ①  */
+  60%  { transform: scale(1.28) rotate( -8deg); } /* モグモグ②  */
+  80%  { transform: scale(1.08) rotate(  4deg); } /* 落ち着く   */
+  100% { transform: scale(1)    rotate(  0deg); }
+}
+
+/* お箸：右に伸びて寿司を掴み → 口元に持っていく */
+@keyframes chopEat {
+  0%   { transform: translateX(18px) rotate(  8deg) scaleX(1.1);  } /* 伸びた状態（掴む） */
+  25%  { transform: translateX(20px) rotate(  5deg) scaleX(1.15); } /* ぎゅっと掴む      */
+  60%  { transform: translateX(-6px) rotate(-38deg) scaleX(0.9);  } /* 口に持っていく     */
+  78%  { transform: translateX(-9px) rotate(-44deg) scaleX(0.85); } /* 口元で一瞬とまる   */
+  100% { transform: translateX(0px)  rotate(-25deg) scaleX(0.85); } /* 元に戻る          */
+}
+
+/* 正解！→ ネコの顔をモグモグさせる */
+.eater-body.nom-anim {
+  animation: bodyNom 0.6s ease-in-out forwards;
+}
+/* 正解！→ お箸が口に持っていく */
+.eater-reach.eat-anim {
+  animation: chopEat 0.65s ease-in-out forwards;
 }
 
 /* ── 寿司打風: 画面全体に和のアクセントライン ── */

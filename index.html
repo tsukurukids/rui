@@ -208,6 +208,18 @@
             <div id="typing-area" style="display:none; width: 100%;">
                 <div class="typing-lane" id="typing-lane">
                     <div class="sushi-conveyor"></div>
+                    <!-- コンベアの左端で寿司を食べるキャラクター -->
+                    <div id="sushi-eater" class="sushi-eater">
+                        <span class="eater-body">🐱</span>
+                        <!-- お皿が来るのを待って、お箸を右に伸ばす -->
+                        <span class="eater-reach">🥢</span>
+                    </div>
+                    <!-- 食べた皿の枚数バッジ（ネコの下） -->
+                    <div class="plate-count" id="plate-count">
+                        <span>🍽️</span>
+                        <span id="plate-count-num">0</span>
+                        <span class="plate-count-label">まい</span>
+                    </div>
                     <div id="sushi-plate" class="sushi-plate">
                         <div id="sushi-icon" class="sushi-icon-img">🍣</div>
                         <div id="typing-word" class="sushi-text">寿司を打て</div>

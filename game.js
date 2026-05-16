@@ -420,6 +420,10 @@ function startGame() {
   const tr = document.getElementById('typing-romaji');
   if (tr) tr.innerHTML = '';
 
+  // 食べた皿の枚数カウンターをリセット
+  const plateNumEl = document.getElementById('plate-count-num');
+  if (plateNumEl) plateNumEl.textContent = '0';
+
   // タイピングの表示・非表示を切りかえる
   const qCard = document.getElementById('question-card');
   if (selectedSubject === 'typing') {
@@ -540,8 +544,9 @@ function goHome() {
 
   const inp = document.getElementById('typing-input');
   if (inp) {
-    inp.removeEventListener('keydown', handleTypingInput);
+    // タイピング入力のフォーカスを外す（keydownイベントはもう使っていないので削除不要）
     inp.blur();
+    inp.value = '';
   }
   // Reset UI on title screen
   document.getElementById('mode-select').style.display = 'none';
@@ -718,106 +723,7 @@ function generateLangQuestion() {
   renderChoices(shuffled, q.answer, /* isText */ true);
 }
 
-/* ── タイピング ── */
-function generateTypingQuestion() {
-  let pool = typingPools[selectedMode];
-  let idx = typingPoolIdx[selectedMode];
-
-  if (idx >= pool.length) {
-    let lastQ = pool[pool.length - 1];
-    typingPools[selectedMode] = shuffle([...pool]);
-    if (typingPools[selectedMode][0] === lastQ) typingPools[selectedMode].push(typingPools[selectedMode].shift());
-    idx = 0;
-  }
-  
-  const q = typingPools[selectedMode][idx];
-  typingPoolIdx[selectedMode] = idx + 1;
-
-  document.getElementById('question-hint').textContent = '';
-  document.getElementById('question-text').textContent = '';
-  
-  document.getElementById('typing-word').textContent = q.display;
-  currentTypingAnswer = q.romaji.toLowerCase();
-  typingInputPos = 0;
-  
-  updateTypingRomajiDisplay();
-  
-  const inp = document.getElementById('typing-input');
-  inp.value = '';
-  inp.removeEventListener('keydown', handleTypingInput);
-  inp.addEventListener('keydown', handleTypingInput);
-  
-  // フォーカスを当て直す
-  setTimeout(() => inp.focus(), 10);
-}
-
-function updateTypingRomajiDisplay() {
-  const el = document.getElementById('typing-romaji');
-  const typed = currentTypingAnswer.substring(0, typingInputPos);
-  const current = currentTypingAnswer.substring(typingInputPos, typingInputPos + 1);
-  const untyped = currentTypingAnswer.substring(typingInputPos + 1);
-  
-  el.innerHTML = `<span class="typed">${typed}</span><span class="current">${current}</span><span class="untyped">${untyped}</span>`;
-}
-
-function handleTypingInput(e) {
-  if (answering || !gameActive) return;
-  
-  // 装飾キーなどは無視
-  if (e.ctrlKey || e.altKey || e.metaKey || e.key.length !== 1) return;
-  e.preventDefault(); // デフォルト入力（ブラウザのスクロールなど）を防ぐ
-  
-  const char = e.key.toLowerCase();
-  const targetChar = currentTypingAnswer[typingInputPos];
-  
-  if (char === targetChar) {
-    typingInputPos++;
-    try { SFX.correct(1); } catch(err){}
-    
-    if (typingInputPos >= currentTypingAnswer.length) {
-      answering = true;
-      streak++;
-      if (streak > maxStreak) maxStreak = streak;
-      correctCount++;
-      const pts = selectedMode === 'intermediate' ? 15 : (selectedMode === 'advanced' ? 25 : 10);
-      const bonus = Math.floor(streak / 3);
-      score += pts + bonus * 5;
-      
-      updateTypingRomajiDisplay();
-      updateHUD();
-      
-      // 正解演出
-      const plate = document.getElementById('sushi-plate');
-      plate.style.transform = 'scale(1.15)';
-      plate.style.opacity = '0';
-      
-      setTimeout(() => {
-        plate.style.transition = 'none';
-        plate.style.transform = 'scale(0)';
-        plate.style.opacity = '1';
-        setTimeout(() => {
-          plate.style.transition = 'all 0.3s ease';
-          plate.style.transform = 'scale(1)';
-          answering = false;
-          generateQuestion();
-        }, 50);
-      }, 300);
-    } else {
-      updateTypingRomajiDisplay();
-    }
-  } else {
-    streak = 0;
-    wrongCount++;
-    try { SFX.wrong(); } catch(err){}
-    updateHUD();
-    
-    // エラーアニメーション
-    const plate = document.getElementById('sushi-plate');
-    plate.classList.remove('error-shake');
-    void plate.offsetWidth;
-    plate.classList.add('error-shake');
-  }
-}
+/* ── タイピング（古いバージョンを削除 → 下の新しいバージョンで動く） ── */
 
 /* ========== Choice rendering ========== */
 function renderChoices(choices, correct, isText) {
@@ -932,16 +838,16 @@ function hideFeedback() {
 
 /* ========== HUD update ========== */
 function updateHUD() {
+  // スコア（XP）を更新してアニメーション
   const scoreEl = document.getElementById('score-display');
   scoreEl.textContent = score;
   scoreEl.classList.remove('score-pulse');
   void scoreEl.offsetWidth;
   scoreEl.classList.add('score-pulse');
 
+  // れんぞく数を表示（3以上は炎マーク）
   document.getElementById('streak-display').textContent =
     streak > 0 ? streak + (streak >= 3 ? '🔥' : '') : '0';
-
-  document.getElementById('miss-display').textContent = wrongCount;
 
   updateTimerUI();
 }
@@ -1053,12 +959,20 @@ function generateTypingQuestion() {
   const iconEl = document.getElementById('sushi-icon');
   if (iconEl) iconEl.textContent = sushiIcons[randInt(0, sushiIcons.length - 1)];
 
-  // お皿のアニメーションをリセットして開始
+  // お皿のアニメーションをリセットして右端から再スタート
   const plate = document.getElementById('sushi-plate');
   if (plate) {
+    // まずクラスと位置をすべてリセット
     plate.classList.remove('sushi-moving', 'sushi-disappearing', 'sushi-shake');
-    void plate.offsetWidth; // reflow
-    plate.classList.add('sushi-moving');
+    plate.style.animation = 'none';    // ← forwards の残りをここで消す
+    plate.style.right = '-310px';      // ← 右端に戻す
+    plate.style.opacity = '1';
+    plate.style.transform = '';
+    plate.style.transition = 'none';
+    void plate.offsetWidth;            // ← ここでブラウザに変更を反映させる
+    plate.style.animation = '';
+    plate.style.right = '';
+    plate.classList.add('sushi-moving');  // ← 改めてアニメーション開始
 
     // お皿が消えたときの処理（時間切れミス）
     plate.onanimationend = (e) => {
@@ -1136,9 +1050,20 @@ if (!window.typingEventSet) {
 function handleTypingShake() {
   const plate = document.getElementById('sushi-plate');
   if (plate) {
-    plate.classList.remove('sushi-shake');
-    void plate.offsetWidth;
-    plate.classList.add('sushi-shake');
+    // ここがポイント！
+    // sushi-shake クラスを使うと、流れる(sushi-moving)アニメーションが
+    // 上書きされて止まってしまう。
+    // そのかわりに animate() を使うと、流れながら揺れることができる！
+    plate.animate(
+      [
+        { filter: 'brightness(1)   drop-shadow(0 0 0px #ff4444)' },
+        { filter: 'brightness(1.6) drop-shadow(0 0 12px #ff4444)' },
+        { filter: 'brightness(1)   drop-shadow(0 0 0px #ff4444)' },
+        { filter: 'brightness(1.6) drop-shadow(0 0 12px #ff4444)' },
+        { filter: 'brightness(1)   drop-shadow(0 0 0px #ff4444)' },
+      ],
+      { duration: 350, easing: 'ease-in-out' }
+    );
   }
   try { SFX.miss(); } catch(err) {}
   wrongCount++;
@@ -1149,10 +1074,41 @@ function handleTypingShake() {
 function handleTypingFinish() {
   const plate = document.getElementById('sushi-plate');
   if (plate) {
-    plate.classList.add('sushi-disappearing');
-    plate.onanimationend = null; // Missを防止
+    plate.onanimationend = null; // ミス判定を止める
+
+    // 流れるアニメーションを止めて、左の食べキャラに向かって吸い込まれる演出
+    plate.style.animation = 'none';
+    void plate.offsetWidth; // ブラウザに変更を反映
+    plate.style.transition = 'right 0.2s ease-in, opacity 0.2s ease-in, transform 0.2s ease';
+    plate.style.right    = '108%';      // 左端の食べキャラの方向へ
+    plate.style.opacity  = '0';
+    plate.style.transform = 'translateY(-58%) scale(0.3)'; // 小さくなりながら消える
   }
-  
+
+  // お皿が到着したころ（0.18秒後）に食べるエモートを発動
+  setTimeout(() => {
+    // ① お箸：口に持っていく動き（chopEatアニメーション）
+    const eaterReach = document.querySelector('.eater-reach');
+    if (eaterReach) {
+      eaterReach.classList.remove('eat-anim');
+      void eaterReach.offsetWidth;
+      eaterReach.classList.add('eat-anim');
+      // 終わったらchopReachに戻す
+      setTimeout(() => eaterReach.classList.remove('eat-anim'), 750);
+    }
+
+    // ② ネコの顔：少し遅れてモグモグする（bodyNomアニメーション）
+    setTimeout(() => {
+      const eaterBody = document.querySelector('.eater-body');
+      if (eaterBody) {
+        eaterBody.classList.remove('nom-anim');
+        void eaterBody.offsetWidth;
+        eaterBody.classList.add('nom-anim');
+        setTimeout(() => eaterBody.classList.remove('nom-anim'), 700);
+      }
+    }, 250); // お箸が口元に到着するタイミングで顔がモグモグ
+  }, 180);
+
   // ポイント加算
   let pts = 10;
   if (selectedMode === 'intermediate') pts = 15;
@@ -1162,6 +1118,16 @@ function handleTypingFinish() {
   correctCount++;
   streak++;
   if (streak > maxStreak) maxStreak = streak;
+
+  // 食べた皿の枚数を+1して表示を更新（ポップアニメーションつき）
+  const plateNumEl = document.getElementById('plate-count-num');
+  if (plateNumEl) {
+    plateNumEl.textContent = correctCount;
+    plateNumEl.classList.remove('plate-count-pop');
+    void plateNumEl.offsetWidth;
+    plateNumEl.classList.add('plate-count-pop');
+    setTimeout(() => plateNumEl.classList.remove('plate-count-pop'), 350);
+  }
   
   try { SFX.correct(streak); } catch(err) {}
   updateHUD();
